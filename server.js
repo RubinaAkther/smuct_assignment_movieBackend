@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const router = require('./routers/auth.route.js');
 
-app.use('/', router);
+app.use('/api/auth', router);
 
 const PORT = 8000;
 app.listen(PORT, () => {
