@@ -1,3 +1,5 @@
+
+
 const User = require('../models/user.model.js');
 
 const home = async (req, res) => {
@@ -13,14 +15,21 @@ const register = async (req, res) => {
     console.log(req.body);
     const { username, email, phone, password } = req.body;
 
+   
+
     const userExist = await User.findOne({ email });
     if (userExist) {
       return res.status(400).json({ msg: 'user already exits' });
     }
 
-    const userCreated = await User.create({ username, email, phone, password });
+    const userCreated = await User.create({
+      username,
+      email,
+      phone,
+      password,
+    });
 
-    res.status(200).send({ userCreated });
+    res.status(201).send({ userCreated });
   } catch (error) {
     res.status(404).send({ message: 'page not found' });
   }
