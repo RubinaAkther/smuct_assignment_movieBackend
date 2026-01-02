@@ -1,5 +1,3 @@
-
-
 const User = require('../models/user.model.js');
 
 const home = async (req, res) => {
@@ -15,8 +13,6 @@ const register = async (req, res) => {
     console.log(req.body);
     const { username, email, phone, password } = req.body;
 
-   
-
     const userExist = await User.findOne({ email });
     if (userExist) {
       return res.status(400).json({ msg: 'user already exits' });
@@ -29,7 +25,13 @@ const register = async (req, res) => {
       password,
     });
 
-    res.status(201).send({ userCreated });
+    res
+      .status(201)
+      .json({
+        msg: "Registration Successful",
+        token: await userCreated.generateToken(),
+        userId: userCreated._id.toString(),
+      });
   } catch (error) {
     res.status(404).send({ message: 'page not found' });
   }
