@@ -1,15 +1,12 @@
 const mongoose = require('mongoose');
 
-const URI = process.env.MONGO_URI;
-
-
 const connectDB = async () => {
   try {
-    await mongoose.connect(URI);
-    console.log('Conected Successfully');
+    await mongoose.connect(process.env.MONGO_URI); // no options needed in Mongoose 7+
+    console.log('MongoDB connected successfully');
   } catch (error) {
-    console.error('Connection failed');
-    process.exit();
+    console.error('MongoDB connection failed:', error.message);
+    process.exit(1); // exit with error code
   }
 };
 

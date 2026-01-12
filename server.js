@@ -1,18 +1,29 @@
 require('dotenv').config();
 const express = require('express');
-const app = express();
-const router = require('./routers/auth.route.js');
-const connectDB = require('./utils/db.js');
+const cookieParser = require('cookie-parser');
 
+const authRouter = require('./routers/auth.route.js');
+const movieRouter = require('./routers/movie.route.js');
+const connectDB = require('./utils/db.js');
+const errorMiddleware = require('./middlewares/error.middleware.js');
+
+const app = express();
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
 
-app.use('/api/auth', router);
+// Routes
+app.use('/api/auth', authRouter);
+app.use('/api/movies', movieRouter);
 
-const PORT = 8000;
+// Global error handler
+app.use(errorMiddleware);
+
+const PORT = process.env.PORT || 8000;
 
 connectDB().then(() => {
   app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
   });
 });
