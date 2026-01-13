@@ -13,6 +13,7 @@ router.get('/:id', movieControllers.getMovieDetails);
 router.post(
   '/create',
   authenticate,
+  adminOnly,
   movieControllers.createMovie
 );
 

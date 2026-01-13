@@ -3,20 +3,13 @@ const User = require('../models/user.model.js');
 
 const authenticate = async (req, res, next) => {
   try {
-    // Get token from Authorization header or cookies
     const token = req.headers.authorization?.split(' ')[1] || req.cookies.token;
-    if (!token) {
-      return res.status(401).json({ msg: 'No token, authorization denied' });
-    }
+    if (!token) return res.status(401).json({ msg: 'No token, authorization denied' });
 
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
-    // Attach user to request
-    const user = await User.findById(decoded.id).select('-password');
-    if (!user) {
-      return res.status(401).json({ msg: 'User not found' });
-    }
+    const user = await User.findById(decoded.userId).select('-password');
+    if (!user) return res.status(401).json({ msg: 'User not found' });
 
     req.user = user;
     next();

@@ -1,15 +1,20 @@
 const Movie = require("../models/movie.model.js");
+const mongoose = require("mongoose");
 
 // Create a movie
 const createMovie = async (req, res) => {
   try {
     const movie = await Movie.create({
       ...req.body,
-      createdBy: req.user._id
+      createdBy: req.user._id, // admin ID from token
     });
-    res.status(201).json(movie);
+    res.status(201).json({
+      success: true,
+      message: "Movie created successfully",
+      movie,
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -25,7 +30,7 @@ const getMovies = async (req, res) => {
       yearTo,
       sort = "latest",
       page = 1,
-      limit = 5
+      limit = 5,
     } = req.query;
 
     const query = {};
@@ -37,9 +42,9 @@ const getMovies = async (req, res) => {
     if (minRating) query.rating.$gte = Number(minRating);
     if (maxRating) query.rating.$lte = Number(maxRating);
 
-    if (yearFrom || yearTo) query.releaseYear = {};
-    if (yearFrom) query.releaseYear.$gte = Number(yearFrom);
-    if (yearTo) query.releaseYear.$lte = Number(yearTo);
+    if (yearFrom || yearTo) query.releaseDate = {};
+    if (yearFrom) query.releaseDate.$gte = new Date(`${yearFrom}-01-01`);
+    if (yearTo) query.releaseDate.$lte = new Date(`${yearTo}-12-31`);
 
     let sortOption = {};
     if (sort === "rating_high") sortOption = { rating: -1 };
@@ -58,44 +63,57 @@ const getMovies = async (req, res) => {
     const total = await Movie.countDocuments(query);
 
     res.json({
+      success: true,
       total,
       page: Number(page),
       pages: Math.ceil(total / limit),
-      movies
+      movies,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
 // Get movie details by ID
 const getMovieDetails = async (req, res) => {
   try {
-    const movie = await Movie.findById(req.params.id);
-    if (!movie) return res.status(404).json({ message: "Movie not found" });
-    res.status(200).json(movie);
+    const movieId = req.params.movieId.trim();
+    if (!mongoose.Types.ObjectId.isValid(movieId))
+      return res.status(400).json({ success: false, message: "Invalid movie ID" });
+
+    const movie = await Movie.findById(movieId);
+    if (!movie) return res.status(404).json({ success: false, message: "Movie not found" });
+
+    res.status(200).json({ success: true, movie });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
 // Update movie
 const updateMovies = async (req, res) => {
   try {
-    const movie = await Movie.findById(req.params.movieId);
-    if (!movie) return res.status(404).json({ message: "Movie not found" });
+    const movieId = req.params.movieId.trim();
+    if (!mongoose.Types.ObjectId.isValid(movieId))
+      return res.status(400).json({ success: false, message: "Invalid movie ID" });
 
-    movie.title = req.body.title || movie.title;
-    movie.genre = req.body.genre || movie.genre;
-    movie.releaseYear = req.body.releaseYear || movie.releaseYear;
-    movie.rating = req.body.rating || movie.rating;
+    const movie = await Movie.findById(movieId);
+    if (!movie) return res.status(404).json({ success: false, message: "Movie not found" });
+
+    // Only update provided fields
+    const { title, genre, releaseDate, director, rating } = req.body;
+    if (title) movie.title = title;
+    if (genre) movie.genre = genre;
+    if (releaseDate) movie.releaseDate = releaseDate;
+    if (director) movie.director = director;
+    if (rating) movie.rating = rating;
 
     const updatedMovie = await movie.save();
 
     res.status(200).json({
       success: true,
       message: "Movie updated successfully",
-      movie: updatedMovie
+      movie: updatedMovie,
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -105,11 +123,16 @@ const updateMovies = async (req, res) => {
 // Delete movie
 const deleteMovies = async (req, res) => {
   try {
-    const movie = await Movie.findByIdAndDelete(req.params.movieId);
-    if (!movie) return res.status(404).json({ message: "Movie not found" });
-    res.json({ success: true, message: "Movie deleted" });
+    const movieId = req.params.movieId.trim();
+    if (!mongoose.Types.ObjectId.isValid(movieId))
+      return res.status(400).json({ success: false, message: "Invalid movie ID" });
+
+    const movie = await Movie.findByIdAndDelete(movieId);
+    if (!movie) return res.status(404).json({ success: false, message: "Movie not found" });
+
+    res.json({ success: true, message: "Movie deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -118,5 +141,5 @@ module.exports = {
   getMovies,
   getMovieDetails,
   updateMovies,
-  deleteMovies
+  deleteMovies,
 };
